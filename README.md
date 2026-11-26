@@ -2,9 +2,9 @@
 
 Unofficial mods for Claude Code. This project is not affiliated with or endorsed by Anthropic.
 
-| Mod | What it does |
-| --- | --- |
-| [session-timeline](#session-timeline) | A side panel that shows what the session did and when, what it is doing now, and what comes next |
+| Mods |
+| --- |
+| [`session-timeline`](#session-timeline) shows what the session did and when, what it is doing now, and what comes next. The panel sits beside the transcript; run `/timeline` to open it. |
 
 ## Install
 
