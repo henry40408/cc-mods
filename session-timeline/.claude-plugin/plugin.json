@@ -1,6 +1,5 @@
 {
   "name": "session-timeline",
-  "version": "0.1.0",
   "description": "Shows what this session did and when, what it is doing now, and what comes next",
   "types": "./types/index.d.ts"
 }

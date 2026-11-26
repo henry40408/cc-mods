@@ -24,11 +24,34 @@ claude plugin install session-timeline --marketplace henry40408/cc-mods
 
 In the desktop app, where `/plugin` is not available: click **+** next to the prompt box, then **Plugins**, **Add marketplace** with `henry40408/cc-mods`, then **Add plugin**.
 
-To update, run this in a shell, then restart Claude Code or run `/reload-plugins`:
+### Follow `main`
+
+Installed as above, a mod follows the `main` branch. To update, run this in a shell, then restart Claude Code or run `/reload-plugins`:
 
 ```sh
 claude plugin update session-timeline@henry40408
 ```
+
+### Stay on a release
+
+Add `#<tag>` to the marketplace to stay on that release. Pick a tag from the releases of this repository.
+
+```sh
+claude plugin install session-timeline --marketplace 'henry40408/cc-mods#v0.1.0'
+```
+
+- The tag applies to the whole marketplace, so every mod from cc-mods stays at that release.
+- `claude plugin update` keeps you on the tag. To move to another release, remove the marketplace, which also uninstalls its mods, then install again:
+
+  ```sh
+  claude plugin marketplace remove henry40408
+  claude plugin install session-timeline --marketplace 'henry40408/cc-mods#v0.2.0'
+  ```
+
+- `session-timeline@henry40408@v0.1.0` does not select a release: Claude Code ignores the last part.
+- Claude Code shows a commit SHA as the version, not the release number.
+
+### Requirements
 
 These mods need a version of Claude Code that supports mods. They are tested with 2.1.332 in the terminal. The desktop app is untested.
 
