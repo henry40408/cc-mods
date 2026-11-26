@@ -2,6 +2,13 @@
 
 Unofficial mods for Claude Code. This project is not affiliated with or endorsed by Anthropic.
 
+[![CI](https://github.com/henry40408/cc-mods/actions/workflows/ci.yml/badge.svg)](https://github.com/henry40408/cc-mods/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/henry40408/cc-mods)](https://github.com/henry40408/cc-mods/releases/latest)
+[![License](https://img.shields.io/github/license/henry40408/cc-mods)](LICENSE.txt)
+[![Claude Code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhenry40408%2Fcc-mods%2Fmain%2F.github%2Fci%2Fpackage.json&query=%24.devDependencies%5B%22%40anthropic-ai%2Fclaude-code%22%5D&label=Claude%20Code&color=blue)](.github/ci/package.json)
+[![Casual Maintenance Intended](https://casuallymaintained.tech/badge.svg)](https://casuallymaintained.tech/)
+[![Vibe Coded](https://img.shields.io/badge/vibe_coded-Claude-d97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
+
 | Mods |
 | --- |
 | [`session-timeline`](#session-timeline) shows what the session did and when, what it is doing now, and what comes next. The panel sits beside the transcript; run `/timeline` to open it. |
@@ -53,7 +60,7 @@ claude plugin install session-timeline --marketplace 'henry40408/cc-mods#v0.1.0'
 
 ### Requirements
 
-These mods need a version of Claude Code that supports mods. They are tested with 2.1.332 in the terminal. The desktop app is untested.
+These mods need a version of Claude Code that supports mods. CI tests them with the version in the Claude Code badge at the top. The desktop app is untested.
 
 ## session-timeline
 
