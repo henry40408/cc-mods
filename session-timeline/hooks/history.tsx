@@ -46,7 +46,7 @@ const chapterHeader = (ui: Ui, { head, actions }: Chapter, now: number) => {
   const { Text } = ui
   const right = actions === 0 ? undefined : counted(actions, 'action')
   if (head === undefined) {
-    return splitRow(ui, { left: <Text bold>⋯ Earlier</Text>, right })
+    return splitRow(ui, { left: <Text bold>… Earlier</Text>, right })
   }
   const { mark, color } = entryLook(head)
 

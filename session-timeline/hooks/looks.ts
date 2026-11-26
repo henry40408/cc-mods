@@ -1,13 +1,16 @@
 import type { Entry, StepStatus, ToolEntry } from '../types'
 
-/** A glyph one cell wide and the theme color it is drawn in. */
+/**
+ * A glyph one cell wide and the theme color it is drawn in. Pick glyphs Maple
+ * Mono has: Ghostty drew ones borrowed from another font at uneven sizes.
+ */
 export type Look = { mark: string; color: string }
 
 const SHELL: Look = { mark: '$', color: 'bashBorder' }
 const LOOKUP: Look = { mark: '◇', color: 'ide' }
-const EDIT: Look = { mark: '✎', color: 'success' }
-const WEB: Look = { mark: '◍', color: 'suggestion' }
-const AGENT: Look = { mark: '✦', color: 'merged' }
+const EDIT: Look = { mark: '±', color: 'success' }
+const WEB: Look = { mark: '⊕', color: 'suggestion' }
+const AGENT: Look = { mark: '✶', color: 'merged' }
 const ASK: Look = { mark: '?', color: 'warning' }
 const OTHER: Look = { mark: '◆', color: 'planMode' }
 
@@ -30,10 +33,10 @@ const TOOL_LOOKS: Record<string, Look> = {
 
 const TEXT_LOOKS = {
   prompt: { mark: '❯', color: 'claude' },
-  trigger: { mark: '↻', color: 'merged' },
+  trigger: { mark: '↪', color: 'merged' },
   say: { mark: '·', color: 'inactive' },
   notice: { mark: '!', color: 'warning' },
-  milestone: { mark: '★', color: 'remember' },
+  milestone: { mark: '▲', color: 'remember' },
 } as const
 
 export const STEP_LOOKS: Record<StepStatus, Look> = {

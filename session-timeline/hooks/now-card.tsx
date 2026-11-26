@@ -6,8 +6,9 @@ import { entryLook } from './looks'
 import { section, splitRow } from './ui'
 import type { Ui } from './ui'
 
-// One frame per redraw, which comes once a second while a turn runs.
-const SPINNER = ['◐', '◓', '◑', '◒']
+// One frame per redraw, which comes once a second while a turn runs. Ghostty
+// draws these quadrants itself, so no font can size them unevenly.
+const SPINNER = ['▘', '▝', '▗', '▖']
 
 const headline = (status: Status, now: number) => {
   switch (status.kind) {

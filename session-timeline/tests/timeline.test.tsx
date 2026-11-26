@@ -117,7 +117,7 @@ test('a turn shows what ran, what runs and the plan', async ($, on) => {
   expect(shown).toContain('◉ apply the fix')
   expect(shown).toContain('○ run the tests')
   expect(shown).toContain('◇ Read main.rs')
-  expect(shown).toContain('★ Finished step: find the cause')
+  expect(shown).toContain('▲ Finished step: find the cause')
   expect(shown).toContain('fix the bug\n2 actions')
   expect(shown.includes('session-timeline › plan')).toBe(false)
 })
@@ -169,7 +169,7 @@ test('the end of a turn leaves nothing running', async ($, on) => {
 
   expect(shown).toContain('○ Idle, your turn')
   expect(shown).toContain('■ Run: sleep 100')
-  expect(shown).toContain('⋯ Earlier')
+  expect(shown).toContain('… Earlier')
   expect(shown).toContain('! You interrupted the run')
 })
 
@@ -216,8 +216,8 @@ test('background work is listed until it reports', async ($, on) => {
 
   const before = await screen($)
 
-  expect(before).toContain('⧗ Background shell: wait for CI')
-  expect(before).toContain('⧗ Scheduled 3/5 09:30 · check the deploy')
+  expect(before).toContain('◔ Background shell: wait for CI')
+  expect(before).toContain('◔ Scheduled 3/5 09:30 · check the deploy')
 
   await submit(
     $,
