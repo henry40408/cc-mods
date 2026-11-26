@@ -9,10 +9,12 @@ const HEADING_MARGIN = 4
 
 type Progress = { share: number; width: number }
 
+// Not `▰▱`: Maple Mono lacks them, and Ghostty at times drew its stand-ins two
+// cells wide.
 const progressBar = ({ share, width }: Progress): string => {
   const filled = Math.round(share * width)
 
-  return '▰'.repeat(filled) + '▱'.repeat(width - filled)
+  return '●'.repeat(filled) + '○'.repeat(width - filled)
 }
 
 // The progress bar takes whatever the title and the count leave of the row.
