@@ -1,0 +1,12 @@
+{
+  "name": "henry40408",
+  "description": "Unofficial mods for Claude Code",
+  "owner": { "name": "henry40408" },
+  "plugins": [
+    {
+      "name": "session-timeline",
+      "source": "./session-timeline",
+      "description": "Shows what this session did and when, what it is doing now, and what comes next"
+    }
+  ]
+}
