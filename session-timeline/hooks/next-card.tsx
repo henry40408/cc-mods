@@ -58,7 +58,7 @@ export const nextCard = (ui: Ui, timeline: Timeline, columns: number) => {
       ...plan.map(step => stepRow(ui, step)),
       ...upcoming.map(item =>
         splitRow(ui, {
-          left: [<Text color="merged">⧗ </Text>, item.text],
+          left: [<Text color="merged">◔ </Text>, item.text],
         }),
       ),
     ],
