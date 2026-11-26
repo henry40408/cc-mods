@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# One run per ref at a time: a newer push supersedes the run it interrupted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# No job writes to the repository, so the token stays read-only.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      # `.github/ci/` pins the Claude Code release; dependabot bumps it.
+      - run: npm ci
+        working-directory: .github/ci
+      - run: echo "$GITHUB_WORKSPACE/.github/ci/node_modules/.bin" >> "$GITHUB_PATH"
+      # Validating the marketplace also checks every mod it lists.
+      - run: claude plugin validate .
+      # `--strict` would fail on the `version` the mods omit on purpose (installs
+      # follow the commit). Without it every warning passes, even a misspelt
+      # manifest field, so fail on all but a missing version or author.
+      - name: Reject unexpected warnings
+        shell: bash
+        run: |
+          unexpected="$(claude plugin validate . --json | jq -r '
+            (.manifest, .contents[]) | .warnings[]
+            | select(.path | test("(^|→ )(version|author)$") | not)
+            | "\(.path): \(.message)"
+          ')"
+          if [ -n "$unexpected" ]; then
+            echo "$unexpected"
+            exit 1
+          fi
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci
+        working-directory: .github/ci
+      - run: echo "$GITHUB_WORKSPACE/.github/ci/node_modules/.bin" >> "$GITHUB_PATH"
+      - run: claude --version
+      # Read from the marketplace, so a new mod cannot be left untested.
+      - name: Test every mod
+        shell: bash
+        run: jq -r '.plugins[].source' .claude-plugin/marketplace.json | xargs -n1 claude plugin test
+
+  lint-workflow:
+    name: lint-workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Download the actionlint release and verify its checksum.
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$archive" "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${archive}" | sha256sum --check
+          tar -xzf "$archive" actionlint
+      - run: ./actionlint
