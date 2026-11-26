@@ -112,7 +112,7 @@ test('a turn shows what ran, what runs and the plan', async ($, on) => {
   expect(shown).toContain('$ Run: build\n$ \n1m05s')
   expect(shown).toContain('1/3 done')
   // 80 columns, less the padding, 'Up next', '1/3 done' and two spaces.
-  expect(shown).toContain(`Up next ${'▰'.repeat(20)}${'▱'.repeat(41)}`)
+  expect(shown).toContain(`Up next ${'●'.repeat(20)}${'○'.repeat(41)}`)
   expect(shown).toContain('✔ find the cause')
   expect(shown).toContain('◉ apply the fix')
   expect(shown).toContain('○ run the tests')
