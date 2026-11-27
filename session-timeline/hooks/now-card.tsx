@@ -6,9 +6,10 @@ import { entryLook } from './looks'
 import { section, splitRow } from './ui'
 import type { Ui } from './ui'
 
-// One frame per redraw, which comes once a second while a turn runs. Ghostty
-// draws these quadrants itself, so no font can size them unevenly.
-const SPINNER = ['▘', '▝', '▗', '▖']
+// One frame per redraw, which comes once a second while a turn runs. These are
+// the Nerd Font spinner glyphs, written as escapes because an editor without
+// that font cannot show them. Maple Mono has all six.
+const SPINNER = ['\uee06', '\uee07', '\uee08', '\uee09', '\uee0a', '\uee0b']
 
 const headline = (status: Status, now: number) => {
   switch (status.kind) {
