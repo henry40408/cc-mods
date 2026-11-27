@@ -60,7 +60,7 @@ claude plugin install session-timeline --marketplace 'henry40408/cc-mods#v0.1.0'
 
 ### Requirements
 
-These mods need a version of Claude Code that supports mods. CI tests them with the version in the Claude Code badge at the top. The desktop app is untested.
+These mods need a version of Claude Code that supports mods. CI tests them with the version in the Claude Code badge at the top. CI does not test the desktop app.
 
 The **Working** spinner of `session-timeline` uses Nerd Font glyphs (U+EE06 to U+EE0B). If your terminal has no font with them, you see a placeholder instead.
 
@@ -74,6 +74,15 @@ In the fullscreen terminal UI, the panel opens on its own when there is room bes
 | **Recap** | The latest session recap, automatic or from `/recap`. Hidden until there is one |
 | **Up next** | Claude's plan with a progress bar and, for each step started or finished, when that was and how long it has taken, plus background tasks and scheduled wakeups |
 | **History (new → old)** | What was done, grouped by the prompt that started it, with totals of prompts, actions and failures |
+
+### In the desktop app
+
+The desktop app shows the same information as a page of cards:
+
+- The status card changes color with the state. While Claude works or waits for you, its icon moves.
+- The plan has a progress strip with one segment for each step.
+- History starts with counts of prompts, actions and failures, then shows one card for each prompt with a strip of the kinds of calls it made. Only the newest card starts open. A button on each card shows or hides its events.
+- A panel minimized to a widget shows only the status card.
 
 ### What it adds to your session
 

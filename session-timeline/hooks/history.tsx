@@ -14,7 +14,7 @@ const SLOW_TOOL_MS = 5000
 // time spent on a quick tool. Only these are slow enough for it to mean much.
 const TIMED_TOOLS = new Set(['Bash', 'Agent', 'WebFetch', 'WebSearch'])
 
-const rowDetail = ({ entry, count }: Run): string | undefined => {
+export const rowDetail = ({ entry, count }: Run): string | undefined => {
   if (count > 1) return `×${count}`
   if (entry.kind !== 'tool' || !TIMED_TOOLS.has(entry.tool)) return undefined
   const took = (entry.endedAt ?? entry.at) - entry.at

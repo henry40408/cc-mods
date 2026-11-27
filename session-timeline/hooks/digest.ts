@@ -125,6 +125,10 @@ const capRows = (chapters: Chapter[]): Chapter[] => {
   })
 }
 
-/** The history as chapters, newest first. Running calls are shown elsewhere. */
-export const chapters = ({ entries }: Timeline): Chapter[] =>
-  capRows(splitByHead(entries).map(toChapter).reverse())
+/** Every chapter in full, newest first. Running calls are shown elsewhere. */
+export const allChapters = ({ entries }: Timeline): Chapter[] =>
+  splitByHead(entries).map(toChapter).reverse()
+
+/** The chapters for a list that draws every row, so only the newest fit. */
+export const chapters = (timeline: Timeline): Chapter[] =>
+  capRows(allChapters(timeline))

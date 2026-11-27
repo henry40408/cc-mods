@@ -31,9 +31,9 @@ const heading = (plan: Step[], columns: number) => {
   return { title: `${TITLE} ${bar}`, right: count }
 }
 
-type Moment = { now: number; isCounting: boolean }
+export type Moment = { now: number; isCounting: boolean }
 
-const stepTime = (
+export const stepTime = (
   { status, startedAt, endedAt }: Step,
   { now, isCounting }: Moment,
 ): string | undefined => {
