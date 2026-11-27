@@ -7,6 +7,11 @@
       "name": "session-timeline",
       "source": "./session-timeline",
       "description": "Shows what this session did and when, what it is doing now, and what comes next"
+    },
+    {
+      "name": "desktop-statusline",
+      "source": "./desktop-statusline",
+      "description": "Shows context fill and rate limits above the prompt in the desktop app"
     }
   ]
 }
