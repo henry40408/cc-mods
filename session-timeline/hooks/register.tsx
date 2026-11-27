@@ -3,6 +3,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { addAsk, answerAsk, dropAsks } from './asks'
 import { describeCall } from './describe'
+import { desktopPage } from './desktop/page'
 import { isAtWork } from './digest'
 import {
   compactedEvent,
@@ -35,6 +36,9 @@ const timeline = atom(
   EMPTY_TIMELINE,
   { shape: 'timeline-4' },
 )
+
+// Which history chapters the person folded or unfolded on the desktop page.
+const folds = atom({ plugin: 'session-timeline', key: 'folds' } as const, {})
 
 const PLAN_SPEC = {
   name: 'plan',
@@ -79,6 +83,19 @@ const PLAN_SECTION = {
 
 const record = ($: EngineInterface, events: TimelineEvent[]) =>
   update($, timeline, held => applyEvents(held, events))
+
+const toggleFold = (
+  $: EngineInterface,
+  id: string,
+  isOpenByDefault: boolean,
+) =>
+  update($, folds, held => ({ ...held, [id]: !(held[id] ?? isOpenByDefault) }))
+
+// Folds belong to one conversation's chapters, so they go when it does.
+const forgetTimeline = async ($: EngineInterface): Promise<void> => {
+  await update($, timeline, () => EMPTY_TIMELINE)
+  await update($, folds, () => ({}))
+}
 
 const recordRecap = async ($: EngineInterface, said: string): Promise<void> => {
   const at = await $.clock.now()
@@ -162,9 +179,7 @@ export const register: Register = on => {
   })
 
   on('session.end', async ($, e, next) => {
-    if (e.reason === 'clear') {
-      await update($, timeline, () => EMPTY_TIMELINE)
-    }
+    if (e.reason === 'clear') await forgetTimeline($)
 
     return next(e)
   })
@@ -172,7 +187,7 @@ export const register: Register = on => {
   // Resuming another conversation in place starts no new session for the mod.
   on('classic.SessionStart', async ($, e, next) => {
     if (e.source === 'resume') {
-      await update($, timeline, () => EMPTY_TIMELINE)
+      await forgetTimeline($)
       await restoreHistory($, e.transcript_path)
     }
 
@@ -324,10 +339,19 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE.id }, async ($, e) => {
-    const ui = $.ui.resolve(e)
-    const { Box } = ui
     const held = await read($, timeline)
     const now = await $.clock.now()
+    if (e.surface === 'desktop') {
+      return desktopPage($.ui.resolve(e), {
+        timeline: held,
+        now,
+        folds: await read($, folds),
+        isGlance: e.props.placement === 'widget',
+        onFold: (id, isOpenByDefault) => toggleFold($, id, isOpenByDefault),
+      })
+    }
+    const ui = $.ui.resolve(e)
+    const { Box } = ui
     const view = { now, columns: e.props.bodyColumns }
 
     return (

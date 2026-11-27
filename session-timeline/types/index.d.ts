@@ -49,8 +49,11 @@ export type Timeline = {
   asks: Ask[]
 }
 
+/** Chapters of the history, by id, the person set open (or shut) by hand. */
+export type Folds = Record<string, boolean>
+
 declare module 'claude-code' {
   interface PluginState {
-    'session-timeline': { timeline: Shaped<Timeline> }
+    'session-timeline': { timeline: Shaped<Timeline>; folds: Folds }
   }
 }

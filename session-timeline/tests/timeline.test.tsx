@@ -850,3 +850,147 @@ test('step times come back from the transcript', async ($, on) => {
     `\ndig\n${clockTime(finished, NOW)} · 2m00s\n◉ fix\n◉ \nfix\nHistory`,
   )
 })
+
+const DESKTOP_PANE = { ...PANE, surface: 'desktop' } as const
+
+const textsOf = async (ui: any): Promise<string[]> => {
+  const found = await ui.findAll({ type: 'Text' })
+
+  return found.map((text: { text: string }) => text.text)
+}
+
+test('the desktop app gets a page of its own', async ($, on) => {
+  const clock = engine(on)
+  await start($)
+  await submit($, 'fix the bug')
+  await $.turn.start({ text: 'fix the bug', turnId: 't1' })
+  await planned($, 'p1', ['dig', 'done'], ['fix', 'in_progress'])
+  await call($, 'a', 'Read', { file_path: '/x/main.rs' })
+  await answer($, 'a')
+  await call($, 'b', 'Bash', { command: 'cargo build', description: 'build' })
+  await clock.advance(65_000)
+
+  const ui = await $.ui.mount(DESKTOP_PANE)
+  const texts = await textsOf(ui)
+  const tree = JSON.stringify(await ui.drawn())
+  await ui.unmount()
+
+  expect(texts).toContain('Working')
+  expect(texts).toContain('1m05s')
+  expect(texts).toContain('Run: build')
+  expect(texts).toContain('1 of 2 done')
+  expect(texts).toContain('fix')
+  expect(texts).toContain('Prompts')
+  expect(texts).toContain('2 actions')
+  expect(texts).toContain('Read main.rs')
+  expect(tree.includes('"type":"Svg"')).toBe(true)
+  // The terminal's marks and cell layout stay in the terminal.
+  expect(texts.join('\n')).not.toMatch(/[╰◇●○◉✔]/)
+  expect(tree.includes('inverseText')).toBe(false)
+  expect(tree.includes('"italic":true')).toBe(false)
+})
+
+test('a desktop drawing stays the same from one second to the next', async ($, on) => {
+  const clock = engine(on)
+  await start($)
+  await submit($, 'fix the bug')
+  await $.turn.start({ text: 'fix the bug', turnId: 't1' })
+  await planned($, 'p1', ['dig', 'in_progress'])
+  await call($, 'a', 'Bash', { command: 'cargo build', description: 'build' })
+  type Drawing = { source: string; isInteractive?: boolean }
+  const drawings = async (): Promise<Drawing[]> => {
+    const ui = await $.ui.mount(DESKTOP_PANE)
+    const found = await ui.findAll({ type: 'Svg' })
+    await ui.unmount()
+
+    return found.map((svg: any) => svg.props)
+  }
+  const moves = ({ source }: Drawing) => source.includes('@keyframes')
+
+  const before = await drawings()
+  await clock.advance(1000)
+
+  // The app restarts a drawing's motion whenever its source changes, and keeps
+  // it across redraws only in the frame of an interactive one.
+  expect(await drawings()).toEqual(before)
+  expect(before.filter(moves).length).toBe(2)
+  expect(
+    before.every(drawing => drawing.isInteractive === moves(drawing)),
+  ).toBe(true)
+})
+
+test('the desktop page folds every chapter but the newest', async ($, on) => {
+  engine(on)
+  await start($)
+  await submit($, 'first')
+  await $.turn.start({ text: 'first', turnId: 't1' })
+  await call($, 'a', 'Read', { file_path: '/x/old.rs' })
+  await answer($, 'a')
+  await $.turn.complete({
+    turnId: 't1',
+    answer: 'done',
+    durationMs: 1,
+    isAborted: false,
+    reason: 'answer',
+  })
+  await submit($, 'second')
+  await $.turn.start({ text: 'second', turnId: 't2' })
+  await call($, 'b', 'Read', { file_path: '/x/new.rs' })
+  await answer($, 'b')
+
+  const ui = await $.ui.mount(DESKTOP_PANE)
+  const folded = await textsOf(ui)
+  const buttons = await ui.findAll({ type: 'Button' })
+  const older: string = (buttons[1] as any).key
+  await ui.press({ key: older })
+  const unfolded = await textsOf(ui)
+  await ui.press({ key: older })
+  const foldedAgain = await textsOf(ui)
+  await ui.unmount()
+
+  expect(folded).toContain('Read new.rs')
+  expect(folded).toContain('Show 1 event')
+  expect(folded.includes('Read old.rs')).toBe(false)
+  expect(unfolded).toContain('Read old.rs')
+  expect(foldedAgain.includes('Read old.rs')).toBe(false)
+})
+
+test('a long newest chapter leaves the older cards on the desktop', async ($, on) => {
+  engine(on)
+  await start($)
+  await submit($, 'first')
+  await call($, 'old', 'Read', { file_path: '/x/old.rs' })
+  await answer($, 'old')
+  await submit($, 'second')
+  for (let index = 0; index < 120; index += 1) {
+    const description = `step ${index}`
+    await call($, `c${index}`, 'Bash', { command: 'ls', description })
+    await answer($, `c${index}`)
+  }
+
+  const ui = await $.ui.mount(DESKTOP_PANE)
+  const texts = await textsOf(ui)
+  await ui.unmount()
+
+  expect(texts).toContain('first')
+  expect(texts).toContain('Show 1 event')
+  expect(texts).toContain('Hide events')
+  expect(texts).toContain('Run: step 0')
+})
+
+test('a desktop widget shows only what the session is doing', async ($, on) => {
+  engine(on)
+  await start($)
+  await submit($, 'fix the bug')
+  await $.turn.start({ text: 'fix the bug', turnId: 't1' })
+
+  const ui = await $.ui.mount({
+    ...DESKTOP_PANE,
+    props: { ...PANE.props, placement: 'widget' },
+  })
+  const texts = await textsOf(ui)
+  await ui.unmount()
+
+  expect(texts).toContain('Working')
+  expect(texts.includes('HISTORY')).toBe(false)
+})
