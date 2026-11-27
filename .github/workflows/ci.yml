@@ -32,21 +32,34 @@ jobs:
       - run: echo "$GITHUB_WORKSPACE/.github/ci/node_modules/.bin" >> "$GITHUB_PATH"
       # Validating the marketplace also checks every mod it lists.
       - run: claude plugin validate .
-      # `--strict` would fail on the `version` the mods omit on purpose (installs
-      # follow the commit). Without it every warning passes, even a misspelt
-      # manifest field, so fail on all but a missing version or author.
-      - name: Reject unexpected warnings
+      # Only validating a mod's own folder type-checks it (type errors that stay
+      # inside a `.d.ts` file go unreported), and a type error is just a
+      # warning. `--strict` would fail on the `version` the mods omit on purpose
+      # (installs follow the commit). Without it every warning passes, even a
+      # misspelt manifest field, so fail on all but a missing version or author.
+      # Plugin directory findings, such as a missing icon, sit outside these
+      # lists, so they pass.
+      - name: Reject type errors and unexpected warnings
         shell: bash
         run: |
-          unexpected="$(claude plugin validate . --json | jq -r '
-            (.manifest, .contents[]) | .warnings[]
-            | select(.path | test("(^|→ )(version|author)$") | not)
-            | "\(.path): \(.message)"
-          ')"
-          if [ -n "$unexpected" ]; then
-            echo "$unexpected"
-            exit 1
-          fi
+          sources="$(jq -r '.plugins[].source' .claude-plugin/marketplace.json)"
+          mapfile -t targets <<< "$sources"
+          failed=0
+          for target in . "${targets[@]}"; do
+            # Keep going on a non-zero exit, to report its errors and the rest.
+            report="$(claude plugin validate "$target" --json)" || failed=1
+            unexpected="$(jq -r '
+              (.manifest, .contents[]) | .file as $file
+              | .errors[], (.warnings[]
+                | select(.path | test("(^|→ )(version|author)$") | not))
+              | "\($file): \(.path): \(.message)"
+            ' <<< "$report")"
+            if [ -n "$unexpected" ]; then
+              echo "$unexpected"
+              failed=1
+            fi
+          done
+          exit "$failed"
 
   test:
     name: test
