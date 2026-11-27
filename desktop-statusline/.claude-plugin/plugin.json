@@ -1,0 +1,5 @@
+{
+  "name": "desktop-statusline",
+  "description": "Shows context fill and rate limits above the prompt in the desktop app",
+  "types": "./types/index.d.ts"
+}
