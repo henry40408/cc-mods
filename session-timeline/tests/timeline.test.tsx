@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
+import { clockTime } from '../hooks/format'
+
 const PLAN = 'mcp__session-timeline__plan'
 
 const NOW = Date.parse('2026-01-01T10:00:00Z')
@@ -120,6 +122,104 @@ test('a turn shows what ran, what runs and the plan', async ($, on) => {
   expect(shown).toContain('▲ Finished step: find the cause')
   expect(shown).toContain('fix the bug\n2 actions')
   expect(shown.includes('session-timeline › plan')).toBe(false)
+})
+
+// The panel tells local times, which differ with where the tests run.
+const timeAfter = (ms: number) => clockTime(NOW + ms, NOW + ms)
+
+const planned = ($: any, id: string, ...steps: [string, string][]) =>
+  call($, id, PLAN, {
+    steps: steps.map(([title, status]) => ({ title, status })),
+  })
+
+test('a plan step tells when and how long', async ($, on) => {
+  const clock = engine(on)
+  await start($)
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  await planned($, 'p1', ['dig', 'in_progress'], ['fix', 'pending'])
+  await clock.advance(130_000)
+  await planned($, 'p2', ['dig', 'done'], ['fix', 'in_progress'])
+  await clock.advance(45_000)
+  await planned($, 'p3', ['dig', 'done'], ['fix', 'in_progress'])
+
+  const shown = await screen($)
+
+  expect(shown).toContain(`\ndig\n${timeAfter(130_000)} · 2m10s\n`)
+  expect(shown).toContain(`\nfix\n${timeAfter(130_000)} · 45s\n`)
+})
+
+test('a step never seen in progress tells only when', async ($, on) => {
+  engine(on)
+  await start($)
+  await call($, 'p1', PLAN, {
+    steps: [
+      { title: 'dig', status: 'done', startedAt: 0 },
+      { title: 'fix', status: 'pending', startedAt: 0 },
+    ],
+  })
+
+  const shown = await screen($)
+
+  // Neither a length for the finished step nor any time for the pending one.
+  expect(shown).toContain(`\ndig\n${timeAfter(0)}\n○ fix\n○ \nfix\nHistory`)
+})
+
+test('steps of one title keep their own times', async ($, on) => {
+  const clock = engine(on)
+  await start($)
+  await planned($, 'p1', ['test', 'in_progress'], ['test', 'pending'])
+  await clock.advance(60_000)
+  await planned($, 'p2', ['test', 'done'], ['test', 'in_progress'])
+  await clock.advance(5_000)
+  await planned($, 'p3', ['test', 'done'], ['test', 'done'])
+
+  const shown = await screen($)
+
+  expect(shown).toContain(`${timeAfter(60_000)} · 1m00s`)
+  expect(shown).toContain(`${timeAfter(65_000)} · 5s`)
+})
+
+test('a step left open stops counting once nothing works', async ($, on) => {
+  let redraws = 0
+  const clock = engine(on)
+  on('ui.invalidate', () => {
+    redraws += 1
+
+    return { value: undefined }
+  })
+  await start($)
+  await planned($, 'p1', ['dig', 'in_progress'])
+  await clock.advance(2_000)
+
+  expect(redraws).toBe(0)
+  expect(await screen($)).toContain(`\ndig\n${timeAfter(0)}\nHistory`)
+})
+
+test('a step waiting on background work keeps counting', async ($, on) => {
+  let redraws = 0
+  const clock = engine(on)
+  on('ui.invalidate', () => {
+    redraws += 1
+
+    return { value: undefined }
+  })
+  await start($)
+  await planned($, 'p1', ['dig', 'in_progress'])
+  await $.classic.Stop({
+    stop_hook_active: false,
+    background_tasks: [
+      { id: 'b1', type: 'shell', status: 'running', description: 'build' },
+    ],
+  })
+  await clock.advance(2_000)
+
+  expect(redraws).toBe(2)
+  expect(await screen($)).toContain(`\ndig\n${timeAfter(0)} · 2s\n`)
+
+  await planned($, 'p2', ['dig', 'done'])
+  await clock.advance(2_000)
+
+  expect(redraws).toBe(2)
 })
 
 test('the plan tool is answered without asking', async ($, on) => {
@@ -710,4 +810,43 @@ test('a recap that fails leaves the last one showing', async ($, on) => {
     expect(shown).toContain('The fix is in.')
     expect(shown.includes(failure)).toBe(false)
   }
+})
+
+test('step times come back from the transcript', async ($, on) => {
+  const planRow = (id: string, timestamp: string, ...statuses: string[]) =>
+    row({
+      type: 'assistant',
+      uuid: id,
+      timestamp,
+      message: {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool_use',
+            id,
+            name: PLAN,
+            input: {
+              steps: statuses.map((status, index) => ({
+                title: ['dig', 'fix'][index],
+                status,
+              })),
+            },
+          },
+        ],
+      },
+    })
+  const transcript = [
+    planRow('p1', '2026-01-01T09:00:00Z', 'in_progress', 'pending'),
+    planRow('p2', '2026-01-01T09:02:00Z', 'done', 'in_progress'),
+  ].join('\n')
+  engine(on, transcript)
+
+  await start($)
+  await $.turn.start({ text: 'go on', turnId: 't1' })
+  const finished = Date.parse('2026-01-01T09:02:00Z')
+
+  // The step still open when the session closed tells no time.
+  expect(await screen($)).toContain(
+    `\ndig\n${clockTime(finished, NOW)} · 2m00s\n◉ fix\n◉ \nfix\nHistory`,
+  )
 })

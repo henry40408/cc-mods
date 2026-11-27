@@ -22,7 +22,14 @@ export type Entry = TextEntry | ToolEntry
 
 export type StepStatus = 'pending' | 'in_progress' | 'done'
 
-export type Step = { title: string; status: StepStatus }
+export type Step = {
+  title: string
+  status: StepStatus
+  /** When the plan first showed the step in progress. */
+  startedAt?: number
+  /** When the plan first showed the step done. */
+  endedAt?: number
+}
 
 /** Work that will happen without a new prompt: a background task or a cron. */
 export type Upcoming = { id: string; text: string }

@@ -33,6 +33,10 @@ export const isRunning = (entry: Entry): entry is ToolEntry =>
 const isHead = (entry: Entry): entry is TextEntry =>
   entry.kind === 'prompt' || entry.kind === 'trigger'
 
+/** Whether a turn runs, or something is set to come back to the session. */
+export const isAtWork = ({ turnStartedAt, upcoming }: Timeline): boolean =>
+  turnStartedAt !== null || upcoming.length > 0
+
 export const currentStatus = (timeline: Timeline): Status => {
   const asking = timeline.entries
     .filter(isRunning)
