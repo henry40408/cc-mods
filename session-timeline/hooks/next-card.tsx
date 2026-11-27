@@ -1,7 +1,9 @@
 import type { Step, Timeline } from '../types'
+import { isAtWork } from './digest'
+import { clockTime, duration } from './format'
 import { STEP_LOOKS } from './looks'
 import { section, splitRow } from './ui'
-import type { Ui } from './ui'
+import type { Ui, View } from './ui'
 
 const TITLE = 'Up next'
 // The padding on both sides, and a space on either side of the progress bar.
@@ -29,8 +31,26 @@ const heading = (plan: Step[], columns: number) => {
   return { title: `${TITLE} ${bar}`, right: count }
 }
 
-const stepRow = (ui: Ui, { title, status }: Step) => {
+type Moment = { now: number; isCounting: boolean }
+
+const stepTime = (
+  { status, startedAt, endedAt }: Step,
+  { now, isCounting }: Moment,
+): string | undefined => {
+  const at = status === 'done' ? endedAt : startedAt
+  if (at === undefined) return undefined
+  // An interrupt, or a plan never closed, leaves a step open. With nothing at
+  // work, its length stays hidden rather than grow on its own.
+  const until = endedAt ?? (isCounting ? now : undefined)
+  // A step done without being seen in progress has no length to tell either.
+  if (startedAt === undefined || until === undefined) return clockTime(at, now)
+
+  return `${clockTime(at, now)} · ${duration(until - startedAt)}`
+}
+
+const stepRow = (ui: Ui, step: Step, moment: Moment) => {
   const { Text } = ui
+  const { title, status } = step
   const { mark, color } = STEP_LOOKS[status]
 
   return splitRow(ui, {
@@ -44,18 +64,21 @@ const stepRow = (ui: Ui, { title, status }: Step) => {
         {title}
       </Text>,
     ],
+    right: stepTime(step, moment),
   })
 }
 
-export const nextCard = (ui: Ui, timeline: Timeline, columns: number) => {
+export const nextCard = (ui: Ui, timeline: Timeline, view: View) => {
+  const { now, columns } = view
   const { Text } = ui
   const { plan, upcoming } = timeline
+  const moment = { now, isCounting: isAtWork(timeline) }
   return section(ui, {
     color: 'claude',
     ...heading(plan, columns),
     children: [
       plan.length === 0 ? <Text color="inactive">No plan yet</Text> : null,
-      ...plan.map(step => stepRow(ui, step)),
+      ...plan.map(step => stepRow(ui, step, moment)),
       ...upcoming.map(item =>
         splitRow(ui, {
           left: [<Text color="merged">◔ </Text>, item.text],

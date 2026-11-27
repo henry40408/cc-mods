@@ -70,7 +70,7 @@ In the fullscreen terminal UI, the panel opens on its own when there is room bes
 | --- | --- |
 | **Working**, **Waiting for you** or **Idle, your turn** | The current state, the calls still running with their elapsed time, and the latest thing Claude said |
 | **Recap** | The latest session recap, automatic or from `/recap`. Hidden until there is one |
-| **Up next** | Claude's plan with a progress bar, plus background tasks and scheduled wakeups |
+| **Up next** | Claude's plan with a progress bar and, for each step started or finished, when that was and how long it has taken, plus background tasks and scheduled wakeups |
 | **History (new → old)** | What was done, grouped by the prompt that started it, with totals of prompts, actions and failures |
 
 ### What it adds to your session
@@ -82,6 +82,7 @@ In the fullscreen terminal UI, the panel opens on its own when there is room bes
 
 - Only the main conversation is listed. A subagent's own steps are not, though its permission requests appear under **Waiting for you**.
 - The plan comes from the mod's own tool. Task lists made with `TaskCreate` or `TodoWrite` are not read.
+- A step's length is measured by the clock from its start, idle time included. A step left in progress shows no length while nothing is at work, and no time at all after a resume.
 - A recap from a manual `/recap` is not restored after a resume. A failed `/recap` is recognized by its message, so an unfamiliar error can show up as the recap.
 - History shows at most 100 rows.
 

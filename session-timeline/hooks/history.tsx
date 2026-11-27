@@ -4,7 +4,7 @@ import type { Chapter, Run } from './digest'
 import { clockTime, counted, duration } from './format'
 import { entryLook } from './looks'
 import { section, splitRow } from './ui'
-import type { Ui } from './ui'
+import type { Ui, View } from './ui'
 
 const TITLE = 'History (new → old)'
 // The padding on both sides, and the gap between the title and the totals.
@@ -91,8 +91,6 @@ const fittingTotals = (timeline: Timeline, columns: number): string => {
 
   return needed <= columns ? worded : totalsText(timeline, false)
 }
-
-type View = { now: number; columns: number }
 
 export const history = (ui: Ui, timeline: Timeline, { now, columns }: View) =>
   section(ui, {

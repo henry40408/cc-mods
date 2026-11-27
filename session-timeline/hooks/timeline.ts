@@ -55,10 +55,33 @@ const milestoneTexts = (before: Step[], after: Step[]): string[] => {
     : texts
 }
 
+// Built anew, so that no time the call itself spelt gets through.
+const stampStep = (
+  { title, status }: Step,
+  held: Step | undefined,
+  at: number,
+): Step => {
+  if (held?.status === status) return held
+  if (status === 'pending') return { title, status }
+  if (status === 'in_progress') return { title, status, startedAt: at }
+  const startedAt = held?.status === 'in_progress' ? held.startedAt : undefined
+
+  return { title, status, startedAt, endedAt: at }
+}
+
+// Titles can repeat, so the nth step of a title follows the nth one held.
+const stampPlan = (held: Step[], steps: Step[], at: number): Step[] =>
+  steps.map((step, index) => {
+    const isNamesake = (other: Step) => other.title === step.title
+    const rank = steps.slice(0, index).filter(isNamesake).length
+
+    return stampStep(step, held.filter(isNamesake)[rank], at)
+  })
+
 const setPlan = (timeline: Timeline, event: ToolStart): Timeline => {
   const { steps } = event.input
   if (!Array.isArray(steps)) return timeline
-  const plan = steps.filter(isStep)
+  const plan = stampPlan(timeline.plan, steps.filter(isStep), event.at)
 
   return milestoneTexts(timeline.plan, plan).reduce(
     (held, text, index) =>
@@ -139,6 +162,17 @@ export const stopRunningTools = (timeline: Timeline): Timeline => ({
     entry.kind === 'tool' && entry.status === 'running'
       ? { ...entry, status: 'stopped' }
       : entry,
+  ),
+})
+
+// A session may have been closed for days since a restored step started, which
+// counting from then would pass off as time spent on it.
+export const forgetOpenStepStarts = (timeline: Timeline): Timeline => ({
+  ...timeline,
+  plan: timeline.plan.map(step =>
+    step.status === 'in_progress'
+      ? { title: step.title, status: step.status }
+      : step,
   ),
 })
 

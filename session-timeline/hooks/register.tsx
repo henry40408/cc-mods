@@ -3,6 +3,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { addAsk, answerAsk, dropAsks } from './asks'
 import { describeCall } from './describe'
+import { isAtWork } from './digest'
 import {
   compactedEvent,
   promptEvents,
@@ -19,6 +20,7 @@ import {
   EMPTY_TIMELINE,
   applyEvents,
   endTurn,
+  forgetOpenStepStarts,
   startTurn,
   stopRunningTools,
   upcomingWork,
@@ -100,7 +102,7 @@ const restoreHistory = async (
   try {
     const events = transcriptEvents(await readTail($, transcriptPath))
     await update($, timeline, held =>
-      stopRunningTools(applyEvents(held, events)),
+      forgetOpenStepStarts(stopRunningTools(applyEvents(held, events))),
     )
   } catch (error) {
     // A new session has no transcript file yet.
@@ -127,7 +129,12 @@ const tick = async (
   if (runningCallId !== undefined && held.asks.length > 0) {
     await update($, timeline, latest => answerAsk(latest, runningCallId))
   }
-  if (held.turnStartedAt !== null) $.ui.invalidate('ui.render')
+  // A step can stay in progress while idle, such as one waiting in background.
+  const isStepCounting =
+    isAtWork(held) && held.plan.some(step => step.status === 'in_progress')
+  if (held.turnStartedAt !== null || isStepCounting) {
+    $.ui.invalidate('ui.render')
+  }
 }
 
 export const register: Register = on => {
@@ -321,13 +328,14 @@ export const register: Register = on => {
     const { Box } = ui
     const held = await read($, timeline)
     const now = await $.clock.now()
+    const view = { now, columns: e.props.bodyColumns }
 
     return (
       <Box flexDirection="column">
         {nowCard(ui, held, now)}
         {held.recap === null ? null : recapCard(ui, held.recap, now)}
-        {nextCard(ui, held, e.props.bodyColumns)}
-        {history(ui, held, { now, columns: e.props.bodyColumns })}
+        {nextCard(ui, held, view)}
+        {history(ui, held, view)}
       </Box>
     )
   })

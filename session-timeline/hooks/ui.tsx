@@ -3,6 +3,9 @@ import type { Elements, RenderChildren } from 'claude-code'
 /** The two elements the panel is built from, alike on every surface. */
 export type Ui = Pick<Elements['terminal'], 'Box' | 'Text'>
 
+/** The moment a card is drawn for, and the columns it has. */
+export type View = { now: number; columns: number }
+
 type Split = {
   left: RenderChildren
   right?: RenderChildren
