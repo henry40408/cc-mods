@@ -62,6 +62,8 @@ claude plugin install session-timeline --marketplace 'henry40408/cc-mods#v0.1.0'
 
 These mods need a version of Claude Code that supports mods. CI tests them with the version in the Claude Code badge at the top. The desktop app is untested.
 
+The **Working** spinner of `session-timeline` uses Nerd Font glyphs (U+EE06 to U+EE0B). If your terminal has no font with them, you see a placeholder instead.
+
 ## session-timeline
 
 In the fullscreen terminal UI, the panel opens on its own when there is room beside the transcript. Run `/timeline` to open it yourself.
